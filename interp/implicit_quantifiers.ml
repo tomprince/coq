@@ -233,6 +233,9 @@ let combine_params avoid fn applied needed =
       | (x, None) :: app, (None, (Name id, _, _)) :: need ->
 	  aux (x :: ids) avoid app need
 
+      | _, (Some (_,false), (Name id, _, _)) :: need ->
+	    aux (CHole (dummy_loc, None) :: ids) avoid app need
+
       | _, (Some cl, (_, _, _) as d) :: need ->
 	  let t', avoid' = fn avoid d in
 	    aux (t' :: ids) avoid' app need

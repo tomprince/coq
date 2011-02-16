@@ -595,7 +595,10 @@ GEXTEND Gram
 	     | IDENT "No"; IDENT "Variables" -> None
 	     | ["Variable" | IDENT "Variables"];
 		  idl = LIST1 identref -> Some idl ] ->
-	     VernacGeneralizable (use_non_locality (), gen) ] ]
+	     VernacGeneralizable (use_non_locality (), gen)
+      | IDENT "Ungereralizable"; IDENT "Arguments";
+          qid = smart_global; "["; l = LIST0 ident; "]" -> VernacUngeneralizableArguments (use_section_locality (),qid,l)
+ ] ]
   ;
   implicit_name:
     [ [ "!"; id = ident -> (id, false, true)
