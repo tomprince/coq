@@ -978,7 +978,7 @@ let vernac_debug b =
 
 let _ =
   declare_bool_option
-    { optsync  = false;
+    { optsync  = true;
       optname  = "Ltac debug";
       optkey   = ["Ltac";"Debug"];
       optread  = (fun () -> get_debug () <> Tactic_debug.DebugOff);
