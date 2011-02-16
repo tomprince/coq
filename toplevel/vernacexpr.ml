@@ -325,6 +325,7 @@ type vernac_expr =
       scope_name option list
   | VernacReserve of simple_binder list
   | VernacGeneralizable of locality_flag * (lident list) option
+  | VernacUngeneralizableArguments of locality_flag * reference or_by_notation * identifier list
   | VernacSetOpacity of
       locality_flag * (Conv_oracle.level * reference or_by_notation list) list
   | VernacUnsetOption of full_locality_flag * Goptions.option_name

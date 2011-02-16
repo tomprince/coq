@@ -69,7 +69,7 @@ let new_instance ?(global=false) ctx (instid, bk, cl) props ?(generalize=true) p
 	    match clname with
 	    | Some (cl, b) ->
 		let t =
-		  if b then
+		  if true then
 		    let _k = class_info cl in
 		      CHole (Util.dummy_loc, Some Evd.InternalHole)
 		  else CHole (Util.dummy_loc, None)

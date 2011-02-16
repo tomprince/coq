@@ -840,6 +840,22 @@ let vernac_declare_arguments local r l nargs flags =
     | _ -> error "Simpl behaviour can be declared for constants only"
 ;;
 
+open Typeclasses
+let vernac_ungeralizable_arguments local g l =
+  match class_of_constr (constr_of_global (smart_global g)) with
+  | Some (_,(tc,_)) ->
+      let (ci, rd) = tc.cl_context in
+      let pars = List.combine ci rd in
+      let newgr = List.map (function
+	| Some (gr, _), ((Name id, _, _) as d) when List.mem id l -> Some (gr, false), d
+	| x -> x) pars in
+      add_class { cl_impl = tc.cl_impl;
+		  cl_context = List.split newgr;
+		  cl_props = tc.cl_props;
+		  cl_projs = tc.cl_projs}
+  | None -> user_err_loc (dummy_loc, "declare_instance",
+			     Pp.str "Constant does not build instances of a declared type class.")
+
 let vernac_reserve bl =
   let sb_decl = (fun (idl,c) ->
     let t = Constrintern.interp_type Evd.empty (Global.env()) c in
@@ -1491,6 +1507,7 @@ let interp c = match c with
   | VernacArguments (local, qid, l, narg, flags) -> vernac_declare_arguments local qid l narg flags 
   | VernacReserve bl -> vernac_reserve bl
   | VernacGeneralizable (local,gen) -> vernac_generalizable local gen
+  | VernacUngeneralizableArguments (local,qid,l) ->vernac_ungeralizable_arguments local qid l
   | VernacSetOpacity (local,qidl) -> vernac_set_opacity local qidl
   | VernacSetOption (locality,key,v) -> vernac_set_option locality key v
   | VernacUnsetOption (locality,key) -> vernac_unset_option locality key
