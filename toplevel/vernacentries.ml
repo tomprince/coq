@@ -1080,7 +1080,7 @@ let vernac_debug b =
 
 let _ =
   declare_bool_option
-    { optsync  = false;
+    { optsync  = true;
       optdepr  = false;
       optname  = "Ltac debug";
       optkey   = ["Ltac";"Debug"];
