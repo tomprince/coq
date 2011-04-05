@@ -135,7 +135,7 @@ GEXTEND Gram
   GLOBAL: proof_mode ;
 
   proof_mode: LAST
-    [ [ c=G_vernac.subgoal_command -> c (Some 1) None ] ]
+    [ [ gln = OPT[n=Prim.natural; ":" -> n]; c = G_vernac.check_command; "." -> c gln ] ]
   ;
 END  
 

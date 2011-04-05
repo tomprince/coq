@@ -48,7 +48,6 @@ let def_body = Gram.entry_create "vernac:def_body"
 let decl_notation = Gram.entry_create "vernac:decl_notation"
 let record_field = Gram.entry_create "vernac:record_field"
 let of_type_with_opt_coercion = Gram.entry_create "vernac:of_type_with_opt_coercion"
-let subgoal_command = Gram.entry_create "proof_mode:subgoal_command"
 let instance_name = Gram.entry_create "vernac:instance_name"
 
 let command_entry = ref noedit_mode
@@ -72,7 +71,7 @@ let default_command_entry =
 
 let no_hook _ _ = ()
 GEXTEND Gram
-  GLOBAL: vernac gallina_ext tactic_mode noedit_mode bullet subgoal_command;
+  GLOBAL: vernac gallina_ext tactic_mode noedit_mode bullet;
   vernac: FIRST
     [ [ IDENT "Time"; v = vernac -> VernacTime v
       | IDENT "Timeout"; n = natural; v = vernac -> VernacTimeout(n,v)
@@ -98,25 +97,26 @@ GEXTEND Gram
       | -> locality_flag := None ] ]
   ;
   noedit_mode:
-    [ [ c = subgoal_command -> c None None] ]
+    [ [ c = check_command; "." -> c None
+      (* This is here to compile the prelude *)
+      | tac = Tactic.tactic; "." -> VernacSolve(1,None,tac,false) ] ]
+  ;
+  opt_goal:
+    [ [ OPT[n=natural; ":" -> n] ] ]
+  ;
+  use_dft_tac:
+    [ [ "." -> false | "..." -> true ] ]
   ;
   tactic_mode:
-  [ [ gln = OPT[n=natural; ":" -> n];
-      tac = subgoal_command -> tac gln None 
-    | b = bullet; tac = subgoal_command -> tac None (Some b)] ]
+  [ [ gln = opt_goal; c = check_command; "." -> c gln
+    | gln = opt_goal;
+      tac = Tactic.tactic; d = use_dft_tac -> VernacSolve(Option.default 1 gln,None,tac,d)
+    | b = bullet; tac = Tactic.tactic; d = use_dft_tac -> VernacSolve(1,Some b,tac,d) ] ]
   ;
   bullet:
   [ [ "-" -> Dash
     | "*" -> Star
     | "+" -> Plus ] ]
-  ;
-  subgoal_command: 
-    [ [ c = check_command; "." -> fun g _ -> c g
-      | tac = Tactic.tactic;
-        use_dft_tac = [ "." -> false | "..." -> true ] ->
-          (fun g b ->
-            let g = Option.default 1 g in
-            VernacSolve(g,b,tac,use_dft_tac)) ] ]
   ;
   located_vernac:
     [ [ v = vernac -> loc, v ] ]
