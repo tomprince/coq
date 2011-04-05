@@ -276,8 +276,10 @@ type vernac_expr =
 
   (* Solving *)
 
-  | VernacSolve of int * bullet option * raw_tactic_expr * bool
+  | VernacSolve of int * raw_tactic_expr * bool
   | VernacSolveExistential of int * constr_expr
+
+  | VernacBullet of bullet
 
   (* Auxiliary file and library management *)
   | VernacRequireFrom of export_flag option * specif_flag option * string

@@ -683,11 +683,10 @@ let put_bullet p bul =
   else 
     push_bullet bul p
 
-let vernac_solve n bullet tcom b =
+let vernac_solve n tcom b =
   if not (refining ()) then
     error "Unknown command of the non proof-editing mode.";
   let p = Proof_global.give_me_the_proof () in
-  Option.iter (put_bullet p) bullet ;
   solve_nth n (Tacinterp.hide_interp tcom None) ~with_end_tac:b;
   (* in case a strict subtree was completed,
      go back to the top of the prooftree *)
@@ -695,6 +694,11 @@ let vernac_solve n bullet tcom b =
   print_subgoals();
   if !pcoq <> None then (Option.get !pcoq).solve n
  
+let vernac_bullet bullet =
+  if not (refining ()) then
+    error "Unknown command of the non proof-editing mode.";
+  let p = Proof_global.give_me_the_proof () in
+  put_bullet p bullet
 
   (* A command which should be a tactic. It has been
      added by Christine to patch an error in the design of the proof
@@ -1372,8 +1376,10 @@ let interp c = match c with
   | VernacDeclareClass id -> vernac_declare_class id
 
   (* Solving *)
-  | VernacSolve (n,bullet,tac,b) -> vernac_solve n bullet tac b
+  | VernacSolve (n,tac,b) -> vernac_solve n tac b
   | VernacSolveExistential (n,c) -> vernac_solve_existential n c
+
+  | VernacBullet bullet -> vernac_bullet bullet
 
   (* Auxiliary file and library management *)
   | VernacRequireFrom (exp,spec,f) -> vernac_require_from exp spec f

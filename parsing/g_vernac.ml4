@@ -99,7 +99,7 @@ GEXTEND Gram
   noedit_mode:
     [ [ c = check_command; "." -> c None
       (* This is here to compile the prelude *)
-      | tac = Tactic.tactic; "." -> VernacSolve(1,None,tac,false) ] ]
+      | tac = Tactic.tactic; "." -> VernacSolve(1,tac,false) ] ]
   ;
   opt_goal:
     [ [ OPT[n=natural; ":" -> n] ] ]
@@ -110,8 +110,8 @@ GEXTEND Gram
   tactic_mode:
   [ [ gln = opt_goal; c = check_command; "." -> c gln
     | gln = opt_goal;
-      tac = Tactic.tactic; d = use_dft_tac -> VernacSolve(Option.default 1 gln,None,tac,d)
-    | b = bullet; tac = Tactic.tactic; d = use_dft_tac -> VernacSolve(1,Some b,tac,d) ] ]
+      tac = Tactic.tactic; d = use_dft_tac -> VernacSolve(Option.default 1 gln,tac,d)
+    | b = bullet; tac = Tactic.tactic; d = use_dft_tac -> VernacList[VernacBullet b; VernacSolve(1,tac,d)] ] ]
   ;
   bullet:
   [ [ "-" -> Dash

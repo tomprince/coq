@@ -742,15 +742,17 @@ let rec pr_vernac = function
       hov 2 (str"Include " ++
 	     prlist_with_sep (fun () -> str " <+ ") pr_m mexprs)
   (* Solving *)
-  | VernacSolve (i,b,tac,deftac) ->
+  | VernacSolve (i,tac,deftac) ->
       (if i = 1 then mt() else int i ++ str ": ") ++
-      (match b with None -> mt () | Some Dash -> str"-" | Some Star -> str"*" | Some Plus -> str"+") ++
       pr_raw_tactic tac
       ++ (try if deftac then str ".." else mt ()
       with UserError _|Loc.Exc_located _ -> mt())
 
   | VernacSolveExistential (i,c) ->
       str"Existential " ++ int i ++ pr_lconstrarg c
+
+  | VernacBullet b ->
+      (match b with | Dash -> str"-" | Star -> str"*" | Plus -> str"+")
 
   (* Auxiliary file and library management *)
   | VernacRequireFrom (exp,spe,f) -> hov 2

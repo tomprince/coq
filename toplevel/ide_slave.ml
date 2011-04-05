@@ -96,6 +96,7 @@ let rec attribute_of_vernac_command = function
   (* Solving *)
   | VernacSolve _ -> [SolveCommand]
   | VernacSolveExistential _ -> [SolveCommand]
+  | VernacBullet _ -> [SolveCommand]
 
   (* Auxiliary file and library management *)
   | VernacRequireFrom _ -> []
