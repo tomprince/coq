@@ -495,7 +495,7 @@ let rec pr_vernac = function
   (* Control *)
   | VernacList l ->
       hov 2 (str"[" ++ spc() ++
-             prlist (fun v -> pr_located pr_vernac v ++ sep_end () ++ fnl()) l
+             prlist (fun v -> pr_vernac v ++ sep_end () ++ fnl()) l
              ++ spc() ++ str"]")
   | VernacLoad (f,s) -> str"Load" ++ if f then (spc() ++ str"Verbose"
   ++ spc()) else spc()  ++ qs s

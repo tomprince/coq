@@ -202,7 +202,7 @@ type inline = int option (* inlining level, none for no inlining *)
 
 type vernac_expr =
   (* Control *)
-  | VernacList of located_vernac_expr list
+  | VernacList of vernac_expr list
   | VernacLoad of verbose_flag * string
   | VernacTime of vernac_expr
   | VernacTimeout of int * vernac_expr

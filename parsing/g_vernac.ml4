@@ -85,7 +85,7 @@ GEXTEND Gram
       | g = gallina_ext; "." -> g
       | c = command; "." -> c
       | c = syntax; "." -> c
-      | "["; l = LIST1 located_vernac; "]"; "." -> VernacList l
+      | "["; l = LIST1 vernac; "]"; "." -> VernacList l
     ] ]
   ;
   vernac_aux: LAST
@@ -117,9 +117,6 @@ GEXTEND Gram
   [ [ "-" -> Dash
     | "*" -> Star
     | "+" -> Plus ] ]
-  ;
-  located_vernac:
-    [ [ v = vernac -> loc, v ] ]
   ;
 END
 

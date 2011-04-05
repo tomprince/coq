@@ -201,7 +201,7 @@ let rec vernac_com interpfun (loc,com) =
 	      raise e
 	  end
 
-    | VernacList l -> List.iter (fun (_,v) -> interp v) l
+    | VernacList l -> List.iter interp l
 
     | VernacFail v ->
 	if not !just_parsing then begin try
