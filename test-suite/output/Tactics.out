@@ -1,6 +1,0 @@
-intro H; split; [ a H | e H ].
-
-intros; match goal with
-        | |- context [if ?X then _ else _] => case X
-        end; trivial.
-
