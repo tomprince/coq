@@ -74,9 +74,9 @@ let vAccu   = ref ([] : (string * string) list)
 
 let addQueue q v = q := v :: !q
 
-let safe_hash_add clq q (k,v) =
+let safe_hash_add clq q (k,(kv,v)) =
   try
-    let v2 = Hashtbl.find q k in
+    let v2 = snd (Hashtbl.find q k) in
     if v<>v2 then
       let rec add_clash = function
           (k1,l1)::cltl when k=k1 -> (k1,v::l1)::cltl
@@ -84,8 +84,8 @@ let safe_hash_add clq q (k,v) =
         | [] -> [(k,[v;v2])] in
       clq := add_clash !clq;
       (* overwrite previous bindings, as coqc does *)
-      Hashtbl.add q k v
-  with Not_found -> Hashtbl.add q k v
+      Hashtbl.add q k (kv,v)
+  with Not_found -> Hashtbl.add q k (kv,v)
 
 (** Files found in the loadpaths.
     For the ML files, the string is the basename without extension.
@@ -108,8 +108,8 @@ let add_ml_known, iter_ml_known, search_ml_known = mkknown ()
 let add_mli_known, iter_mli_known, search_mli_known = mkknown ()
 let add_mllib_known, _, search_mllib_known = mkknown ()
 
-let vKnown = (Hashtbl.create 19 : (string list, string) Hashtbl.t)
-let coqlibKnown = (Hashtbl.create 19 : (string list, unit) Hashtbl.t)
+let vKnown = (Hashtbl.create 19 : (string list, string list * string) Hashtbl.t)
+let coqlibKnown = (Hashtbl.create 19 : (string list, string list) Hashtbl.t)
 
 let clash_v = ref ([]: (string list * string list) list)
 
@@ -295,12 +295,14 @@ let traite_fichier_Coq verbose f =
       while true do
       	let tok = coq_action buf in
 	match tok with
+    | RequireExport strl
+    | RequireImport strl
 	  | Require strl ->
 	      List.iter (fun str ->
 		if not (List.mem str !deja_vu_v) then begin
 	          addQueue deja_vu_v str;
                   try
-                    let file_str = safe_assoc verbose f str in
+                    let file_str = snd (safe_assoc verbose f str) in
                     printf " %s%s" (canonize file_str) !suffixe
                   with Not_found ->
 		    if verbose && not (Hashtbl.mem coqlibKnown str) then
@@ -311,7 +313,7 @@ let traite_fichier_Coq verbose f =
 	      if not (List.mem [str] !deja_vu_v) then begin
 	        addQueue deja_vu_v [str];
                 try
-                  let file_str = Hashtbl.find vKnown [str] in
+                  let file_str = snd (Hashtbl.find vKnown [str]) in
                   printf " %s%s" (canonize file_str) !suffixe
                 with Not_found ->
 		  if not (Hashtbl.mem coqlibKnown [str]) then
@@ -340,7 +342,7 @@ let traite_fichier_Coq verbose f =
 	      if not (List.mem [str] !deja_vu_v) then begin
 	        addQueue deja_vu_v [str];
                 try
-                  let file_str = Hashtbl.find vKnown [str] in
+                  let file_str = snd (Hashtbl.find vKnown [str]) in
                   printf " %s.v" (canonize file_str)
                 with Not_found -> ()
        	      end
@@ -404,7 +406,7 @@ let add_known phys_dir log_dir f =
 	let file = phys_dir//basename in
 	let paths = suffixes name in
 	List.iter
-	  (fun n -> safe_hash_add clash_v vKnown (n,file)) paths
+	  (fun n -> safe_hash_add clash_v vKnown (n,(name,file))) paths
     | (basename,(".ml"|".ml4")) -> add_ml_known basename (Some phys_dir)
     | (basename,".mli") -> add_mli_known basename (Some phys_dir)
     | (basename,".mllib") -> add_mllib_known basename (Some phys_dir)

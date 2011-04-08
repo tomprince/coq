@@ -17,6 +17,8 @@
 
   type coq_token =
     | Require of string list list
+    | RequireExport of string list list
+    | RequireImport of string list list
     | RequireString of string
     | Declare of string list
     | Load of string
@@ -26,6 +28,7 @@
   exception Fin_fichier
   exception Syntax_error of int*int
 
+  let require_type = ref (fun s -> Require s)
   let module_current_name = ref []
   let module_names = ref []
   let ml_module_name = ref ""
@@ -49,11 +52,11 @@ let dot = '.' ( space+ | eof)
 
 rule coq_action = parse
   | "Require" space+
-      { module_names := []; opened_file lexbuf }
+      { module_names := []; require_type := (fun s -> Require s); opened_file lexbuf }
   | "Require" space+ "Export" space+
-      { module_names := []; opened_file lexbuf}
+      { module_names := []; require_type := (fun s -> RequireExport s); opened_file lexbuf}
   | "Require" space+ "Import" space+
-      { module_names := []; opened_file lexbuf}
+      { module_names := []; require_type := (fun s -> RequireImport s); opened_file lexbuf}
   | "Local"? "Declare" space+ "ML" space+ "Module" space+
       { mllist := []; modules lexbuf}
   | "Load" space+
@@ -201,7 +204,7 @@ and opened_file_fields = parse
                   opened_file_fields lexbuf }
   | dot         { module_names :=
                     List.rev !module_current_name :: !module_names;
-                  Require (List.rev !module_names) }
+                  !require_type (List.rev !module_names) }
   | eof         { raise Fin_fichier }
   | _           { opened_file_fields lexbuf }
 

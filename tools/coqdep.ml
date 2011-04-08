@@ -19,6 +19,7 @@ open Coqdep_common
 let option_D = ref false
 let option_w = ref false
 let option_sort = ref false
+let option_require = ref false
 
 let rec warning_mult suf iter =
   let tab = Hashtbl.create 151 in
@@ -39,8 +40,8 @@ let add_coqlib_known phys_dir log_dir f =
   match get_extension f [".vo"] with
     | (basename,".vo") ->
         let name = log_dir@[basename] in
-	let paths = suffixes name in
-        List.iter (fun f -> Hashtbl.add coqlibKnown f ()) paths
+        List.iter (fun s -> Hashtbl.add coqlibKnown s name)
+          (suffixes name)
     | _ -> ()
 
 let sort () =
@@ -54,10 +55,12 @@ let sort () =
       try
 	while true do
 	  match coq_action lb with
+	    | RequireImport sl
+	    | RequireExport sl
 	    | Require sl ->
 		List.iter
 		  (fun s ->
-		    try loop (Hashtbl.find vKnown s)
+		    try loop (snd (Hashtbl.find vKnown s))
 		    with Not_found -> ())
 		sl
 	    | RequireString s -> loop s
@@ -69,6 +72,30 @@ let sort () =
     end
   in
   List.iter (fun (name,_) -> loop name) !vAccu
+
+let require () =
+  let string_of_dirpath s = String.concat "." (try fst (Hashtbl.find vKnown s)
+    with _ -> (try (Hashtbl.find coqlibKnown s) with _ -> s)
+    ) in
+  List.iter (fun (file,_) ->
+    let file = canonize file in
+      let cin = open_in (file ^ ".v") in
+      let lb = Lexing.from_channel cin in
+      try
+	while true do
+	  match coq_action lb with
+    | RequireExport s ->
+        printf "Require Export";
+        List.iter (fun s -> printf " %s" (string_of_dirpath s)) s;
+        printf ".\n"
+    | RequireImport s ->
+        printf "Require Import";
+        List.iter (fun s -> printf " %s" (string_of_dirpath s)) s;
+        printf ".\n"
+    | _ -> ()
+  done with Fin_fichier ->
+    close_in cin
+  ) !vAccu
 
 let (dep_tab : (string,string list) Hashtbl.t) = Hashtbl.create 151
 
@@ -182,6 +209,7 @@ let rec parse = function
   | "-suffix" :: (s :: ll) -> suffixe := s ; parse ll
   | "-suffix" :: [] -> usage ()
   | "-slash" :: ll -> option_slash := true; parse ll
+  | "-require" :: ll -> option_require := true; parse ll
   | ("-h"|"--help"|"-help") :: _ -> usage ()
   | f :: ll -> treat_file None f; parse ll
   | [] -> ()
@@ -209,6 +237,7 @@ let coqdep () =
   warning_mult ".mli" iter_mli_known;
   warning_mult ".ml" iter_ml_known;
   if !option_sort then begin sort (); exit 0 end;
+  if !option_require then begin require (); exit 0 end;
   if !option_c && not !option_D then mL_dependencies ();
   if not !option_D then coq_dependencies ();
   if !option_w || !option_D then declare_dependencies ()
