@@ -419,9 +419,17 @@ let merge_disc g arcu arcv =
 
 type constraint_type = Lt | Le | Eq
 
-exception UniverseInconsistency of constraint_type * universe * universe
+exception UniverseInconsistency of universes * constraint_type * universe * universe
 
-let error_inconsistency o u v = raise (UniverseInconsistency (o,Atom u,Atom v))
+let error_inconsistency g o u v =
+  let g,arcu = safe_repr g u in
+  let g,arcv = safe_repr g v in
+  let g = match o with
+    | Lt -> fst (setlt g arcu arcv)
+    | Eq -> merge g arcu arcv 
+    | Le -> fst (setleq g arcu arcv)
+  in
+  raise (UniverseInconsistency (g,o,Atom u,Atom v))
 
 (* enforce_univ_leq : UniverseLevel.t -> UniverseLevel.t -> unit *)
 (* enforce_univ_leq u v will force u<=v if possible, will fail otherwise *)
@@ -431,7 +439,7 @@ let enforce_univ_leq u v g =
   match compare g arcu arcv with
     | NLE ->
 	(match compare g arcv arcu with
-           | LT -> error_inconsistency Le u v
+           | LT -> error_inconsistency g Le u v
            | LE -> merge g arcv arcu
            | NLE -> fst (setleq g arcu arcv)
            | EQ -> anomaly "Univ.compare")
@@ -444,11 +452,11 @@ let enforce_univ_eq u v g =
   let g,arcv = safe_repr g v in
   match compare g arcu arcv with
     | EQ -> g
-    | LT -> error_inconsistency Eq u v
+    | LT -> error_inconsistency g Eq u v
     | LE -> merge g arcu arcv
     | NLE ->
 	(match compare g arcv arcu with
-           | LT -> error_inconsistency Eq u v
+           | LT -> error_inconsistency g Eq u v
            | LE -> merge g arcv arcu
            | NLE -> merge_disc g arcu arcv
            | EQ -> anomaly "Univ.compare")
@@ -460,11 +468,11 @@ let enforce_univ_lt u v g =
   match compare g arcu arcv with
     | LT -> g
     | LE -> fst (setlt g arcu arcv)
-    | EQ -> error_inconsistency Lt u v
+    | EQ -> error_inconsistency g Lt u v
     | NLE ->
 	(match compare g arcv arcu with
            | NLE -> fst (setlt g arcu arcv)
-           | _ -> error_inconsistency Lt u v)
+           | _ -> error_inconsistency g Lt u v)
 
 (* Constraints and sets of consrtaints. *)
 
@@ -849,4 +857,3 @@ module Huniv =
 let hcons1_univ u =
   let _,_,hdir,_,_,_ = Names.hcons_names() in
   Hashcons.simple_hcons Huniv.f hdir u
-
