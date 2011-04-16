@@ -36,6 +36,8 @@ let raw_print = ref false
 
 let record_print = ref true
 
+let allow_inconsistent_universes = ref false
+
 (* Compatibility mode *)
 
 type compat_version = V8_2 | V8_3
