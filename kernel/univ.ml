@@ -423,6 +423,7 @@ type constraint_type = Lt | Le | Eq
 exception UniverseInconsistency of universes * constraint_type * universe * universe
 
 let error_inconsistency g o u v =
+  if !Flags.allow_inconsistent_universes then g else
   let g,arcu = safe_repr g u in
   let g,arcv = safe_repr g v in
   let g = match o with
