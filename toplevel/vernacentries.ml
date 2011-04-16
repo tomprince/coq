@@ -1010,6 +1010,14 @@ let _ =
       optread  = (fun () -> get_debug () <> Tactic_debug.DebugOff);
       optwrite = vernac_debug }
 
+let _ =
+  declare_bool_option
+    { optsync  = false;
+      optname  = "Inconsistent Universes";
+      optkey   = ["Inconsistent";"Universes"];
+      optread  = (fun () -> !Flags.allow_inconsistent_universes);
+      optwrite = (:=) Flags.allow_inconsistent_universes }
+
 let vernac_set_opacity local str =
   let glob_ref r =
     match smart_global r with

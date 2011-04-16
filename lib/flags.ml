@@ -35,6 +35,8 @@ let load_proofs = ref Lazy
 
 let raw_print = ref false
 
+let allow_inconsistent_universes = ref false
+
 (* Compatibility mode *)
 
 type compat_version = V8_2

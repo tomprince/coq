@@ -26,6 +26,8 @@ val load_proofs : load_proofs ref
 
 val raw_print : bool ref
 
+val allow_inconsistent_universes : bool ref
+
 type compat_version = V8_2
 val compat_version : compat_version option ref
 val version_strictly_greater : compat_version -> bool
