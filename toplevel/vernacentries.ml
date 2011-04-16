@@ -244,6 +244,11 @@ let dump_universes sorted s =
   let g = if sorted then Univ.sort_universes g else g in
   dump_universes_gen g s
 
+let dump_universe_file = ref ""
+
+let _ = Cerrors.dump_universes := Some (fun g -> if String.length !dump_universe_file <> 0
+  then dump_universes_gen g !dump_universe_file)
+
 (*********************)
 (* "Locate" commands *)
 
@@ -998,6 +1003,14 @@ let _ =
       optkey   = ["Printing";"Universes"];
       optread  = (fun () -> !Constrextern.print_universes);
       optwrite = (fun b -> Constrextern.print_universes:=b) }
+
+let _ =
+  declare_string_option
+    { optsync  = false;
+      optname  = "dumping of universes on inconsistency";
+      optkey   = ["Dump";"Universes"];
+      optread  = (fun () -> !dump_universe_file);
+      optwrite = (fun s -> dump_universe_file := s) }
 
 let vernac_debug b =
   set_debug (if b then Tactic_debug.DebugOn 0 else Tactic_debug.DebugOff)

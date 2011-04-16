@@ -11,6 +11,8 @@ open Util
 
 (** Error report. *)
 
+val dump_universes : (Univ.universes -> unit) option ref
+
 val print_loc : loc -> std_ppcmds
 
 val explain_exn : exn -> std_ppcmds

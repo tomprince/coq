@@ -88,9 +88,12 @@ let rec explain_exn_default_aux anomaly_string report_fn = function
 let wrap_vernac_error strm =
   EvaluatedError (hov 0 (str "Error:" ++ spc () ++ strm), None)
 
+let dump_universes = ref None
+
 let rec process_vernac_interp_error = function
   | Univ.UniverseInconsistency (g,o,u,v) ->
       let msg =
+        Option.iter (fun f -> f g ) !dump_universes;
 	if !Constrextern.print_universes then
 	  spc() ++ str "(cannot enforce" ++ spc() ++ Univ.pr_uni u ++ spc() ++
           str (match o with Univ.Lt -> "<" | Univ.Le -> "<=" | Univ.Eq -> "=")
