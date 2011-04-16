@@ -71,7 +71,7 @@ val enforce_eq : constraint_function
 
 type constraint_type = Lt | Le | Eq
 
-exception UniverseInconsistency of constraint_type * universe * universe
+exception UniverseInconsistency of universes * constraint_type * universe * universe
 
 val merge_constraints : constraints -> universes -> universes
 val normalize_universes : universes -> universes

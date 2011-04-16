@@ -59,7 +59,7 @@ let wrap_vernac_error strm =
   EvaluatedError (hov 0 (str "Error:" ++ spc () ++ strm), None)
 
 let rec process_vernac_interp_error = function
-  | Univ.UniverseInconsistency (o,u,v) ->
+  | Univ.UniverseInconsistency (g,o,u,v) ->
       let msg =
 	if !Constrextern.print_universes then
 	  spc() ++ str "(cannot enforce" ++ spc() ++ Univ.pr_uni u ++ spc() ++
