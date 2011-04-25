@@ -81,6 +81,7 @@ type hints_entry =
       int * (patvar list * constr_pattern) option * Tacexpr.glob_tactic_expr
   | HintsDestructEntry of identifier * int * (bool,unit) Tacexpr.location *
       (patvar list * constr_pattern) * Tacexpr.glob_tactic_expr
+  | HintsIncludeEntry of string list
 
 val searchtable_map : hint_db_name -> hint_db
 
