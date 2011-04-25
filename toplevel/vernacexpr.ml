@@ -116,6 +116,7 @@ type hints_expr =
   | HintsExtern of int * constr_expr option * raw_tactic_expr
   | HintsDestruct of identifier *
       int * (bool,unit) location * constr_expr * raw_tactic_expr
+  | HintsInclude of string list
 
 type search_restriction =
   | SearchInside of reference list

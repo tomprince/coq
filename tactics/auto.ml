@@ -306,7 +306,8 @@ module Hint_db = struct
     hintdb_map : search_entry Constr_map.t;
     (* A list of unindexed entries starting with an unfoldable constant
        or with no associated pattern. *)
-    hintdb_nopat : (global_reference option * stored_data) list
+    hintdb_nopat : (global_reference option * stored_data) list;
+    hintdb_includes : string list
   }
 
   let next_hint_id t = 
@@ -318,7 +319,8 @@ module Hint_db = struct
 			  hintdb_max_id = 0;
 			  use_dn = use_dn;
 			  hintdb_map = Constr_map.empty;
-			  hintdb_nopat = [] }
+        hintdb_nopat = [];
+        hintdb_includes = [] }
 
   let find key db =
     try Constr_map.find key db.hintdb_map
@@ -417,9 +419,14 @@ module Hint_db = struct
 
   let cut db = db.hintdb_cut
 
+  let add_includes db names =
+    { db with hintdb_includes = (Util.list_unionq names db.hintdb_includes) }
+
   let unfolds db = db.hintdb_unfolds
 
   let use_dn db = db.use_dn
+
+  let includes db = db.hintdb_includes
 
 end
 
@@ -611,12 +618,18 @@ let remove_hint dbname grs =
   let db' = Hint_db.remove_list grs db in
     searchtable_add (dbname, db')
 
+let add_include dbname dbs =
+  let db = get_db dbname in
+  let db' = Hint_db.add_includes db dbs in
+    searchtable_add (dbname,db')
+
 type hint_action =
   | CreateDB of bool * transparent_state
   | AddTransparency of evaluable_global_reference list * bool
   | AddHints of hint_entry list
   | RemoveHints of global_reference list
   | AddCut of hints_path
+  | AddIncludes of string list
 
 let add_cut dbname path =
   let db = get_db dbname in
@@ -632,6 +645,7 @@ let cache_autohint (_,(local,name,hints)) =
   | AddHints hints -> add_hint name hints
   | RemoveHints grs -> remove_hint name grs
   | AddCut path -> add_cut name path
+  | AddIncludes dbs -> add_include name dbs
 
 let forward_subst_tactic =
   ref (fun _ -> failwith "subst_tactic is not installed for auto")
@@ -693,9 +707,10 @@ let subst_autohint (subst,(local,name,hintlist as obj)) =
     | AddCut path ->
       let path' = subst_hints_path subst path in
 	if path' == path then obj else (local, name, AddCut path')
+    | AddIncludes _ -> obj
 
 let classify_autohint ((local,name,hintlist) as obj) =
-  if local or hintlist = (AddHints []) then Dispose else Substitute obj
+  if local or (hintlist = AddHints []) or (hintlist = AddIncludes []) then Dispose else Substitute obj
 
 let inAutoHint : hint_obj -> obj =
   declare_object {(default_object "AUTOHINT") with
@@ -773,6 +788,13 @@ let add_trivials env sigma l local dbnames =
 		    AddHints (List.map (fun (name, c) -> make_trivial env sigma ~name c) l))))
     dbnames
 
+let add_include dbs local dbnames =
+  List.iter
+    (fun dbname ->
+       Lib.add_anonymous_leaf (
+	 inAutoHint(local,dbname, AddIncludes dbs)))
+    dbnames
+
 let forward_intern_tac =
   ref (fun _ -> failwith "intern_tac is not installed for auto")
 
@@ -788,6 +810,7 @@ type hints_entry =
       int * (patvar list * constr_pattern) option * glob_tactic_expr
   | HintsDestructEntry of identifier * int * (bool,unit) location *
       (patvar list * constr_pattern) * glob_tactic_expr
+  | HintsIncludeEntry of string list
 
 let h = id_of_string "H"
 
@@ -861,6 +884,7 @@ let interp_hints h =
   | HintsDestruct(na,pri,loc,pat,code) ->
       let (l,_ as pat) = fp pat in
       HintsDestructEntry (na,pri,loc,pat,!forward_intern_tac l code)
+  | HintsInclude dbs -> HintsIncludeEntry dbs
 
 let add_hints local dbnames0 h =
   if List.mem "nocore" dbnames0 then
@@ -880,6 +904,7 @@ let add_hints local dbnames0 h =
       if dbnames0<>[] then
         warn (str"Database selection not implemented for destruct hints");
       Dhyp.add_destructor_hint local na loc pat pri code
+  | HintsIncludeEntry dbs -> add_include dbs local dbnames
 
 (**************************************************************************)
 (*                    Functions for printing the hints                    *)
@@ -1220,7 +1245,18 @@ let make_db_list dbnames =
   let lookup db =
     try searchtable_map db with Not_found -> error_no_such_hint_database db
   in
-  List.map lookup dbnames
+  let rec build next_dbs dbs =
+    let new_dbs = Util.list_map_append
+      (fun db -> Util.list_map_filter
+        (fun x ->
+          let new_db = lookup x in
+            if List.memq new_db dbs then None
+              else Some new_db)
+        (Hint_db.includes db))
+      next_dbs
+    in match new_dbs with [] -> dbs | _ -> build new_dbs (new_dbs @ dbs)
+  in let dbs = List.map lookup dbnames
+    in build dbs dbs
 
 let trivial lems dbnames gl =
   let db_list = make_db_list dbnames in
