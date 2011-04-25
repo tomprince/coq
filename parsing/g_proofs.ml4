@@ -124,7 +124,8 @@ GEXTEND Gram
           dloc = destruct_location;
           hyptyp = constr_pattern;
           "=>"; tac = tactic ->
-            HintsDestruct(id,pri,dloc,hyptyp,tac) ] ]
+            HintsDestruct(id,pri,dloc,hyptyp,tac)
+      | IDENT "Include"; lc = LIST1 IDENT -> HintsInclude lc ]]
     ;
   constr_body:
     [ [ ":="; c = lconstr -> c
