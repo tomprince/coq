@@ -1244,6 +1244,7 @@ let vernac_print = function
       let st = Conv_oracle.get_transp_state () in
       let nassums = Assumptions.assumptions st ~add_opaque:o cstr in
       msg (Printer.pr_assumptionset (Global.env ()) nassums)
+  | PrintString s -> msg (str s)
 
 let global_module r =
   let (loc,qid) = qualid_of_reference r in

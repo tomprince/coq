@@ -952,6 +952,7 @@ let rec pr_vernac = function
          term *)
 	| PrintAssumptions (b,qid) -> (if b then str"Print Assumptions" else str"Print Opaque Dependencies")
 	    ++ spc() ++ pr_smart_global qid
+	| PrintString s -> str"Print String" ++ spc() ++ str s
       in pr_printable p
   | VernacSearch (sea,sea_r) -> pr_search sea sea_r pr_constr_pattern_expr
   | VernacLocate loc ->
