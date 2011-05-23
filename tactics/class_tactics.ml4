@@ -184,7 +184,9 @@ and e_my_find_search db_list local_db hdc complete concl =
       let tac = if complete then tclCOMPLETE tac else tac in
 	match t with
 	| Extern _ -> (tac,b,true, name, lazy (pr_autotactic t))
-	| _ -> (tac,b,false, name, lazy (pr_autotactic t))
+	| _ -> 
+(* 	  let tac gl = with_pattern (pf_env gl) (project gl) flags p concl tac gl in *)
+	    (tac,b,false, name, lazy (pr_autotactic t))
   in List.map tac_of_hint hintl
 
 and e_trivial_resolve db_list local_db gl =
@@ -347,7 +349,7 @@ let hints_tac hints =
 		     msgnl (pr_depth (i :: info.auto_depth) ++ str": " ++ Lazy.force pp
 			    ++ str" on" ++ spc () ++ pr_ev s gl);
 		   let fk =
-		     (fun () -> (* if !typeclasses_debug then msgnl (str"backtracked after " ++ pp); *)
+		     (fun () -> if !typeclasses_debug then msgnl (str"backtracked after " ++ Lazy.force pp);
 			aux (succ i) true tl)
 		   in
 		   let sgls =
