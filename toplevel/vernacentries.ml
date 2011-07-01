@@ -771,6 +771,10 @@ let vernac_declare_implicits local r = function
       Impargs.declare_manual_implicits local (smart_global r) ~enriching:false
 	(List.map (List.map (fun (ex,b,f) -> ex, (b,true,f))) imps)
 
+let vernac_declare_recargs r l = match smart_global r with
+  | ConstRef c -> Tacred.add_recargs_spec (canonical_con c, l)
+  | _ -> error "Recursive arguments can only be declared for constants"
+
 let vernac_reserve bl =
   let sb_decl = (fun (idl,c) ->
     let t = Constrintern.interp_type Evd.empty (Global.env()) c in
@@ -1373,6 +1377,7 @@ let interp c = match c with
   | VernacHints (local,dbnames,hints) -> vernac_hints local dbnames hints
   | VernacSyntacticDefinition (id,c,l,b) ->vernac_syntactic_definition id c l b
   | VernacDeclareImplicits (local,qid,l) ->vernac_declare_implicits local qid l
+  | VernacRecursiveArguments (qid,l) ->vernac_declare_recargs qid l
   | VernacReserve bl -> vernac_reserve bl
   | VernacGeneralizable (local,gen) -> vernac_generalizable local gen
   | VernacSetOpacity (local,qidl) -> vernac_set_opacity local qidl

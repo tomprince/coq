@@ -818,6 +818,10 @@ let rec pr_vernac = function
   | VernacDeclareImplicits (local,q,[]) ->
       hov 2 (pr_section_locality local ++ str"Implicit Arguments" ++ spc() ++ 
 	pr_smart_global q)
+  | VernacRecursiveArguments (q,(l,n)) ->
+      hov 2 (str"Recursive Arguments" ++ spc() ++ pr_smart_global q ++ spc()
+        ++str"[" ++ str(String.concat " " (List.map string_of_int l)) ++ str"]"
+        ++spc()++if List.fold_left max 0 l <> n then int n else str "")
   | VernacDeclareImplicits (local,q,impls) ->
       hov 1 (pr_section_locality local ++ str"Implicit Arguments " ++ 
 	spc() ++ pr_smart_global q ++ spc() ++

@@ -308,6 +308,7 @@ type vernac_expr =
       locality_flag * onlyparsing_flag
   | VernacDeclareImplicits of locality_flag * reference or_by_notation *
       (explicitation * bool * bool) list list
+  | VernacRecursiveArguments of reference or_by_notation * (int list * int)
   | VernacReserve of simple_binder list
   | VernacGeneralizable of locality_flag * (lident list) option
   | VernacSetOpacity of

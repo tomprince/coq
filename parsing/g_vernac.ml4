@@ -520,6 +520,12 @@ GEXTEND Gram
 	    ((Global,CanonicalStructure),(dummy_loc,s),d,
 	     (fun _ -> Recordops.declare_canonical_structure))
 
+      (* Simpl recursive arguments *)
+      | IDENT "Recursive"; IDENT "Arguments"; qid = smart_global;
+          "["; l = LIST0 natural; "]"; n = OPT natural ->
+          let max_l = List.fold_left max 0 l in
+          VernacRecursiveArguments (qid,(l,Option.default max_l n))
+
       (* Coercions *)
       | IDENT "Coercion"; qid = global; d = def_body ->
           let s = coerce_reference_to_id qid in

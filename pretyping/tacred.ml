@@ -515,27 +515,65 @@ let special_red_case env sigma whfun (ci, p, c, lf)  =
   in
   redrec (c, empty_stack)
 
+(* data structure to hold the map kn -> rec_args for simpl *)
+
+let recArgs_table = ref []
+
+let _ =
+  Summary.declare_summary "simplrecdefs"
+    { Summary.freeze_function = (fun () -> !recArgs_table);
+      Summary.unfreeze_function = (fun x -> recArgs_table := x);
+      Summary.init_function = (fun () -> recArgs_table := []) }
+
+let inRecArgs = Libobject.declare_object {
+  (Libobject.default_object "SIMPLIFY-REC-ARGS") with
+  Libobject.open_function =
+    (fun _ (_, o) -> recArgs_table := o @ !recArgs_table);
+  Libobject.cache_function =
+    (fun (_, o) -> recArgs_table := o @ !recArgs_table);
+}
+
+let add_recargs_spec x = Lib.add_anonymous_leaf (inRecArgs [x])
+
+let rec_args_of_ref = function
+  | EvalVar _ | EvalRel _ | EvalEvar _ -> None
+  | EvalConst c ->
+      try Some (List.assoc (canonical_con c) !recArgs_table)
+      with Not_found -> None
+
 (* [red_elim_const] contracts iota/fix/cofix redexes hidden behind
    constants by keeping the name of the constants in the recursive calls;
    it fails if no redex is around *)
 
 let rec red_elim_const env sigma ref largs =
-  match reference_eval sigma env ref with
-    | EliminationCases n when stack_args_size largs >= n ->
+  let nargs = stack_args_size largs in
+  let largs, unfold_anyway =
+    match rec_args_of_ref ref with
+    | None -> largs, false
+    | Some (l,n) when nargs < n -> raise Redelimination
+    | Some (l,n) ->
+        List.fold_left (fun stack i ->
+          let arg = stack_nth stack (i-1) in
+          let rarg = whd_construct_state env sigma (arg, empty_stack) in
+          match kind_of_term (fst rarg) with
+          | Construct _ -> stack_assign stack (i-1) (app_stack rarg)
+          | _ -> raise Redelimination)
+        largs l, n <= nargs in
+  try match reference_eval sigma env ref with
+    | EliminationCases n when nargs >= n ->
 	let c = reference_value sigma env ref in
 	let c', lrest = whd_betadelta_state env sigma (c,largs) in
 	let whfun = whd_simpl_state env sigma in
         (special_red_case env sigma whfun (destCase c'), lrest)
-    | EliminationFix (min,minfxargs,infos) when stack_args_size largs >=min ->
+    | EliminationFix (min,minfxargs,infos) when nargs >= min ->
 	let c = reference_value sigma env ref in
 	let d, lrest = whd_betadelta_state env sigma (c,largs) in
 	let f = make_elim_fun ([|Some (minfxargs,ref)|],infos) largs in
 	let whfun = whd_construct_state env sigma in
 	(match reduce_fix_use_function env sigma f whfun (destFix d) lrest with
 	   | NotReducible -> raise Redelimination
-	   | Reduced (c,rest) -> (nf_beta sigma c, rest))
-    | EliminationMutualFix (min,refgoal,refinfos)
-	when stack_args_size largs >= min ->
+           | Reduced (c,rest) -> (nf_beta sigma c, rest))
+    | EliminationMutualFix (min,refgoal,refinfos) when nargs >= min ->
 	let rec descend ref args =
 	  let c = reference_value sigma env ref in
 	  if ref = refgoal then
@@ -551,6 +589,9 @@ let rec red_elim_const env sigma ref largs =
 	   | NotReducible -> raise Redelimination
 	   | Reduced (c,rest) -> (nf_beta sigma c, rest))
     | _ -> raise Redelimination
+    with Redelimination when unfold_anyway ->
+       let c = reference_value sigma env ref in
+       whd_betaiotazeta sigma (app_stack (c, largs)), empty_stack
 
 (* reduce to whd normal form or to an applied constant that does not hide
    a reducible iota/fix/cofix redex (the "simpl" tactic) *)

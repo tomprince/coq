@@ -123,6 +123,7 @@ let rec attribute_of_vernac_command = function
   | VernacHints _ -> []
   | VernacSyntacticDefinition _ -> []
   | VernacDeclareImplicits _ -> []
+  | VernacRecursiveArguments _ -> []
   | VernacDeclareReduction _ -> []
   | VernacReserve _ -> []
   | VernacGeneralizable _ -> []
