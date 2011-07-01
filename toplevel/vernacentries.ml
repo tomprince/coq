@@ -778,6 +778,10 @@ let vernac_ungeralizable_arguments local g l =
   | None -> user_err_loc (dummy_loc, "declare_instance",
 			     Pp.str "Constant does not build instances of a declared type class.")
 
+let vernac_declare_recargs r l = match smart_global r with
+  | ConstRef c -> Tacred.add_recargs_spec (canonical_con c, l)
+  | _ -> error "Recursive arguments can only be declared for constants"
+
 let vernac_reserve bl =
   let sb_decl = (fun (idl,c) ->
     let t = Constrintern.interp_type Evd.empty (Global.env()) c in
@@ -1401,6 +1405,7 @@ let interp c = match c with
   | VernacHints (local,dbnames,hints) -> vernac_hints local dbnames hints
   | VernacSyntacticDefinition (id,c,l,b) ->vernac_syntactic_definition id c l b
   | VernacDeclareImplicits (local,qid,l) ->vernac_declare_implicits local qid l
+  | VernacRecursiveArguments (qid,l) ->vernac_declare_recargs qid l
   | VernacReserve bl -> vernac_reserve bl
   | VernacGeneralizable (local,gen) -> vernac_generalizable local gen
   | VernacUngeneralizableArguments (local,qid,l) ->vernac_ungeralizable_arguments local qid l

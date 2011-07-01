@@ -44,6 +44,7 @@ val red_product : reduction_function
 val try_red_product : reduction_function
 
 (** Simpl *)
+val add_recargs_spec : kernel_name * (int list * int) -> unit
 val simpl : reduction_function
 
 (** Simpl only at the head *)
