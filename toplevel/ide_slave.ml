@@ -82,7 +82,7 @@ let rec attribute_of_vernac_command = function
   (* Control *)
   | VernacTime com -> attribute_of_vernac_command com
   | VernacTimeout(_,com) -> attribute_of_vernac_command com
-  | VernacFail com -> attribute_of_vernac_command com
+  | VernacFail (_,com) -> attribute_of_vernac_command com
   | VernacList _ -> [] (* unsupported *)
   | VernacLoad _ -> []
 

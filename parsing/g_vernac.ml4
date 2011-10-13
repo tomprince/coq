@@ -74,7 +74,8 @@ GEXTEND Gram
   vernac: FIRST
     [ [ IDENT "Time"; v = vernac -> VernacTime v
       | IDENT "Timeout"; n = natural; v = vernac -> VernacTimeout(n,v)
-      | IDENT "Fail"; v = vernac -> VernacFail v
+      | IDENT "Fail"; v = vernac -> VernacFail (false,v)
+      | IDENT "NoAnomaly"; v = vernac -> VernacFail (true,v)
       | locality; v = vernac_aux -> v ] ]
   ;
   vernac_aux:
