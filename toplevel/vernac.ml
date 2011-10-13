@@ -203,12 +203,13 @@ let rec vernac_com interpfun (loc,com) =
 
     | VernacList l -> List.iter (fun (_,v) -> interp v) l
 
-    | VernacFail v ->
+    | VernacFail (catch_anomaly, v) ->
 	if not !just_parsing then begin try
 	  interp v; raise HasNotFailed
 	with e -> match real_error e with
 	  | HasNotFailed ->
-	      errorlabstrm "Fail" (str "The command has not failed !")
+              if not catch_anomaly then
+                errorlabstrm "Fail" (str "The command has not failed !")
 	  | e ->
 	      (* Anomalies are re-raised by the next line *)
 	      let msg = Errors.print_no_anomaly e in

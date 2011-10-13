@@ -506,7 +506,8 @@ let rec pr_vernac = function
   ++ spc()) else spc()  ++ qs s
   | VernacTime v -> str"Time" ++ spc() ++ pr_vernac v
   | VernacTimeout(n,v) -> str"Timeout " ++ int n ++ spc() ++ pr_vernac v
-  | VernacFail v -> str"Fail" ++ spc() ++ pr_vernac v
+  | VernacFail (false,v) -> str"Fail" ++ spc() ++ pr_vernac v
+  | VernacFail (true,v) -> str"NoAnomaly" ++ spc() ++ pr_vernac v
 
   (* Syntax *)
   | VernacTacticNotation (n,r,e) -> pr_grammar_tactic_rule n ("",r,e)
