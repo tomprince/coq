@@ -211,10 +211,11 @@ let nb_empty_evars s =
 
 let pr_ev evs ev = Printer.pr_constr_env (Goal.V82.env evs ev) (Evarutil.nf_evar evs (Goal.V82.concl evs ev))
 
-let pr_depth l = prlist_with_sep (fun () -> str ".") pr_int (List.rev l)
+let pr_depth l = prlist_with_sep (fun () -> str ".") (fun (i,j) -> if j==0 then
+  pr_int i else pr_int i ++ str"/" ++ pr_int j )  (List.rev l)
 
 type autoinfo = { hints : Auto.hint_db; is_evar: existential_key option;
-		  only_classes: bool; auto_depth: int list; auto_last_tac: std_ppcmds Lazy.t;
+		  only_classes: bool; auto_depth: (int * int) list; auto_last_tac: std_ppcmds Lazy.t;
 		  auto_path : global_reference option list;
 		  auto_cut : hints_path }
 type autogoal = goal * autoinfo
@@ -335,22 +336,38 @@ let hints_tac hints =
       let concl = Goal.V82.concl s gl in
       let tacgl = {it = gl; sigma = s} in
       let poss = e_possible_resolve hints info.hints concl in
+      if !typeclasses_debug then
+        msgnl (pr_depth (info.auto_depth) ++ str": goal: " ++ Pp.hv 0 (pr_ev s gl));
       let rec aux i foundone = function
 	| (tac, _, b, name, pp) :: tl ->
 	  let derivs = path_derivate info.auto_cut name in
+          (*if !typeclasses_debug then (
+            msgnl (str"deriv: " ++ Pp.hov 0 (Eauto.pr_hints_path () () () derivs));
+            msgnl (str"info.auto_cut: " ++ Pp.h 0 (Eauto.pr_hints_path () () () info.auto_cut));
+            msgnl (str"name: " ++ Eauto.pr_hints_path_atom () () () name));*)
 	  let res = 
             try
-		if path_matches derivs [] then None else Some (tac tacgl)
+		if path_matches derivs [] then Some None else Some (Some (tac tacgl))
 	    with e when catchable e -> None 
 	  in
 	    (match res with
-	       | None -> aux i foundone tl
-	       | Some {it = gls; sigma = s'} ->
+	       | Some None ->
+                   if !typeclasses_debug then
+		     msgnl (pr_depth ((i, 0) :: info.auto_depth) ++ str" cut: " ++ Eauto.pr_hints_path_atom ()()() name);
+                   aux (succ i) foundone tl
+	       | None ->
+		   (*if !typeclasses_debug then
+		     msgnl (pr_depth ((i, 0) :: info.auto_depth) ++ str" tactic
+                     failed: " ++ Lazy.force pp);*)
+                   aux (succ i) foundone tl
+	       | Some (Some {it = gls; sigma = s'}) ->
 	    	   if !typeclasses_debug then
-		     msgnl (pr_depth (i :: info.auto_depth) ++ str": " ++ Lazy.force pp
-			    ++ str" on" ++ spc () ++ pr_ev s gl);
+		     msgnl (pr_depth ((i, 0) :: info.auto_depth) ++ str" tactic: " ++ Lazy.force pp);
 		   let fk =
-		     (fun () -> if !typeclasses_debug then msgnl (str"backtracked after " ++ Lazy.force pp);
+		     (fun () -> if !typeclasses_debug then
+                       (msgnl (pr_depth ((i,0) :: info.auto_depth) ++ Pp.v 0
+                       (str" backtracked after " ++ Lazy.force pp ++ spc () ++
+                       str" goal: " ++ Pp.hv 0 (pr_ev s gl))));
 			aux (succ i) true tl)
 		   in
 		   let sgls =
@@ -372,7 +389,7 @@ let hints_tac hints =
 		   let gls' = list_map_i
 		     (fun j (evar, g) ->
 			let info =
-			  { info with auto_depth = j :: i :: info.auto_depth; auto_last_tac = pp;
+			  { info with auto_depth = (i,j) :: info.auto_depth; auto_last_tac = pp;
 			      is_evar = evar;
 			      hints =
 			      if b && not (Environ.eq_named_context_val (Goal.V82.hyps s' g) (Goal.V82.hyps s' gl))
@@ -385,9 +402,10 @@ let hints_tac hints =
 		     sk glsv fk)
 	| [] ->
 	  if not foundone && !typeclasses_debug then
-	    msgnl (pr_depth info.auto_depth ++ str": no match for " ++
-		     Printer.pr_constr_env (Goal.V82.env s gl) concl ++
-		     spc () ++ int (List.length poss) ++ str" possibilities");
+	    msgnl (pr_depth info.auto_depth ++ str": " ++ Pp.v 0 ( str"no match for " ++
+		     Pp.hov 0 (Printer.pr_constr_env (Goal.V82.env s gl) concl) ++
+                     spc() ++
+		     int (List.length poss) ++ str" possibilities"));
 	  fk ()
     in aux 1 false poss }
 
@@ -467,7 +485,7 @@ let make_autogoals ?(only_classes=true) ?(st=full_transparent_state) hints gs ev
   let cut = cut_of_hints hints in
   { it = list_map_i (fun i g -> 
     let (gl, auto) = make_autogoal ~only_classes ~st cut (Some (fst g)) {it = snd g; sigma = evm'} in
-      (gl, { auto with auto_depth = [i]})) 1 gs; sigma = evm' }
+      (gl, { auto with auto_depth = [(i,0)]})) 1 gs; sigma = evm' }
 
 let get_result r = 
   match r with
