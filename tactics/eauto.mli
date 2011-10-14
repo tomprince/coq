@@ -36,3 +36,6 @@ val eauto_with_bases :
   open_constr list -> Auto.hint_db list -> Proof_type.tactic
 
 val autounfold : hint_db_name list -> Tacticals.clause -> tactic
+
+val pr_hints_path : 'a -> 'a -> 'a -> Auto.hints_path -> Pp.std_ppcmds
+val pr_hints_path_atom : 'a -> 'a -> 'a -> Auto.hints_path_atom -> Pp.std_ppcmds
