@@ -165,29 +165,19 @@ module EvarInfoMap = struct
   (*******************************************************************)
   (* Formerly Instantiate module *)
 
-  let is_id_inst inst =
-    let is_id (id,c) = match kind_of_term c with
-      | Var id' -> id = id'
-      | _ -> false
-    in
-      List.for_all is_id inst
-
-  (* Vérifier que les instances des let-in sont compatibles ?? *)
-  let instantiate_sign_including_let sign args =
+  (* Note: let-in contributes to the instance *)
+  let make_evar_instance sign args =
     let rec instrec = function
-      | ((id,b,_) :: sign, c::args) -> (id,c) :: (instrec (sign,args))
-      | ([],[])                        -> []
-      | ([],_) | (_,[]) ->
-	  anomaly "Signature and its instance do not match"
+      | (id,_,_) :: sign, c::args when isVarId id c -> instrec (sign,args)
+      | (id,_,_) :: sign, c::args -> (id,c) :: instrec (sign,args)
+      | [],[] -> []
+      | [],_ | _,[] -> anomaly "Signature and its instance do not match"
     in
       instrec (sign,args)
 
   let instantiate_evar sign c args =
-    let inst = instantiate_sign_including_let sign args in
-      if is_id_inst inst then
-	c
-      else
-	replace_vars inst c
+    let inst = make_evar_instance sign args in
+    if inst = [] then c else replace_vars inst c
 
   (* Existentials. *)
 
@@ -755,6 +745,22 @@ let pr_decl ((id,b,_),ok) =
   | Some c -> str (if ok then "(" else "{") ++ pr_id id ++ str ":=" ++
       print_constr c ++ str (if ok then ")" else "}")
 
+let pr_evar_source = function
+  | QuestionMark _ -> str "underscore"
+  | CasesType -> str "pattern-matching return predicate"
+  | BinderType (Name id) -> str "type of " ++ Nameops.pr_id id
+  | BinderType Anonymous -> str "type of anonymous binder"
+  | ImplicitArg (c,(n,ido),b) ->
+      let id = Option.get ido in
+      str "parameter " ++ pr_id id ++ spc () ++ str "of" ++
+      spc () ++ Nametab.pr_global_env Idset.empty c
+  | InternalHole -> str "internal placeholder"
+  | TomatchTypeParameter (ind,n) ->
+      nth n ++ str " argument of type " ++ print_constr (mkInd ind)
+  | GoalEvar -> str "goal evar"
+  | ImpossibleCase -> str "type of impossible pattern-matching clause"
+  | MatchingVar _ -> str "matching variable"
+
 let pr_evar_info evi =
   let phyps =
     try
@@ -767,7 +773,10 @@ let pr_evar_info evi =
       | Evar_empty -> mt ()
       | Evar_defined c -> spc() ++ str"=> "  ++ print_constr c
   in
-  hov 2 (str"["  ++ phyps ++ spc () ++ str"|- "  ++ pty ++ pb ++ str"]")
+  let src = str "(" ++ pr_evar_source (snd evi.evar_source) ++ str ")" in
+  hov 2
+    (str"["  ++ phyps ++ spc () ++ str"|- "  ++ pty ++ pb ++ str"]" ++
+       spc() ++ src)
 
 let compute_evar_dependency_graph (sigma:evar_map) =
   (* Compute the map binding ev to the evars whose body depends on ev *)
@@ -825,9 +834,9 @@ let pr_evar_map_t depth sigma =
   in evs ++ svs ++ cs
 
 let print_env_short env =
-  let pr_body = function None -> mt () | Some b -> str " := " ++ print_constr b in
-  let pr_named_decl (n, b, _) = pr_id n ++ pr_body b in
-  let pr_rel_decl (n, b, _) = pr_name n ++ pr_body b in
+  let pr_body n = function None -> pr_name n | Some b -> str "(" ++ pr_name n ++ str " := " ++ print_constr b ++ str ")" in
+  let pr_named_decl (n, b, _) = pr_body (Name n) b in
+  let pr_rel_decl (n, b, _) = pr_body n b in
   let nc = List.rev (named_context env) in
   let rc = List.rev (rel_context env) in
     str "[" ++ prlist_with_sep pr_spc pr_named_decl nc ++ str "]" ++ spc () ++

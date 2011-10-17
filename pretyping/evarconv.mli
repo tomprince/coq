@@ -39,3 +39,8 @@ val check_conv_record : constr * types list -> constr * types list ->
     (constr list * types list) *
     (constr list * types list) * constr *
     (int * constr)
+
+val set_solve_evars : (env -> evar_map -> constr -> evar_map * constr) -> unit
+
+val second_order_matching : transparent_state -> env -> evar_map -> 
+  existential -> constr -> evar_map * bool

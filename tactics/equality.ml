@@ -131,8 +131,8 @@ let instantiate_lemma_all frzevars env sigma gl c ty l l2r concl =
   in
   let flags = make_flags frzevars sigma rewrite_unif_flags eqclause in
   let occs =
-    Unification.w_unify_to_subterm_all ~flags env
-      ((if l2r then c1 else c2),concl) eqclause.evd
+    Unification.w_unify_to_subterm_all ~flags env eqclause.evd
+      ((if l2r then c1 else c2),concl)
   in List.map try_occ occs
 
 let instantiate_lemma env sigma gl c ty l l2r concl =
@@ -251,7 +251,7 @@ let find_elim hdcncl lft2rgt dep cls args gl =
 	  let c1 = destConst pr1 in 
 	  let mp,dp,l = repr_con (constant_of_kn (canonical_con c1)) in 
 	  let l' = label_of_id (add_suffix (id_of_label l) "_r")  in 
-	  let c1' = Global.constant_of_delta (make_con mp dp l') in
+	  let c1' = Global.constant_of_delta_kn (make_kn mp dp l') in
 	  begin 
 	    try 
 	      let _ = Global.lookup_constant c1' in
