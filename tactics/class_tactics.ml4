@@ -322,7 +322,7 @@ let hints_tac hints =
 		       | None -> gls', s'
 		       | Some (evgls, s') ->
 			 (* Reorder with dependent subgoals. *)
-			 (List.map (fun (ev, x) -> Some ev, x) evgls @ gls', s')
+			 (gls' @ List.map (fun (ev, x) -> Some ev, x) evgls, s')
 		   in
 		   let gls' = list_map_i
 		     (fun j (evar, g) ->
