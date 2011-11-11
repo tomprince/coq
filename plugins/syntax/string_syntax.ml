@@ -60,7 +60,7 @@ let uninterp_string r =
 
 let _ =
   Notation.declare_string_interpreter "string_scope"
-    (string_path,["Coq";"Strings";"String"])
+    (string_path,string_module)
     interp_string
     ([GRef (dummy_loc,static_glob_String);
       GRef (dummy_loc,static_glob_EmptyString)],
