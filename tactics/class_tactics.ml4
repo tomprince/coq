@@ -39,6 +39,7 @@ open Compat
 
 let typeclasses_db = "typeclass_instances"
 let typeclasses_debug = ref false
+let typeclasses_debug_verbose = ref false
 let typeclasses_depth = ref None
 
 let _ = 
@@ -359,9 +360,9 @@ let hints_tac hints =
 		     msgnl (pr_depth ((i, 0) :: info.auto_depth) ++ str" cut: " ++ Eauto.pr_hints_path_atom ()()() name);
                    aux (succ i) foundone tl
 	       | None ->
-		   (*if !typeclasses_debug then
+		   if !typeclasses_debug && !typeclasses_debug_verbose then
 		     msgnl (pr_depth ((i, 0) :: info.auto_depth) ++ str" tactic
-                     failed: " ++ Lazy.force pp);*)
+                     failed: " ++ Lazy.force pp);
                    aux (succ i) foundone tl
 	       | Some (Some {it = gls; sigma = s'}) ->
 	    	   if !typeclasses_debug then
@@ -535,7 +536,7 @@ let real_eauto st ?limit hints p evd =
       | Some (evd', fk) -> aux evd' (fk :: fails)
   in aux evd []
 
-let resolve_all_evars_once debug limit p evd =
+let resolve_all_evars_once limit p evd =
   let db = searchtable_map typeclasses_db in
     real_eauto ?limit (Hint_db.transparent_state db) [db] p evd
 
@@ -656,7 +657,7 @@ let has_undefined p oevd evd =
 
 exception Unresolved
 
-let resolve_all_evars debug m env p oevd do_split fail =
+let resolve_all_evars m env p oevd do_split fail =
   let split = if do_split then split_evars oevd else [Intset.empty] in
   let in_comp comp ev = if do_split then Intset.mem ev comp else true
   in
@@ -665,7 +666,7 @@ let resolve_all_evars debug m env p oevd do_split fail =
     | comp :: comps ->
       let p = select_and_update_evars p oevd (in_comp comp) in
       try
-	 let evd' = resolve_all_evars_once debug m p evd in
+	 let evd' = resolve_all_evars_once m p evd in
 	 if has_undefined p oevd evd' then raise Unresolved;
 	 docomp evd' comps
       with Unresolved | Not_found ->
@@ -684,28 +685,27 @@ let initial_select_evars onlyargs =
   else
     (fun evd ev evi -> Typeclasses.is_class_evar evd evi)
 
-let resolve_typeclass_evars debug m env evd onlyargs split fail =
+let resolve_typeclass_evars m env evd onlyargs split fail =
   let evd = 
     try Evarconv.consider_remaining_unif_problems
       ~ts:(Typeclasses.classes_transparent_state ()) env evd
     with _ -> evd
   in
-    resolve_all_evars debug m env (initial_select_evars onlyargs) evd split fail
+    resolve_all_evars m env (initial_select_evars onlyargs) evd split fail
 
-let solve_inst debug depth env evd onlyargs split fail =
-  resolve_typeclass_evars debug depth env evd onlyargs split fail
+let solve_inst depth env evd onlyargs split fail =
+  resolve_typeclass_evars depth env evd onlyargs split fail
 
 let _ =
   Typeclasses.solve_instanciations_problem :=
-    solve_inst false !typeclasses_depth
+    solve_inst !typeclasses_depth
 
 
 (** Options: depth, debug and transparency settings. *)
 
 open Goptions
 
-let set_typeclasses_debug d = (:=) typeclasses_debug d;
-  Typeclasses.solve_instanciations_problem := solve_inst d !typeclasses_depth
+let set_typeclasses_debug d = (:=) typeclasses_debug d
     
 let get_typeclasses_debug () = !typeclasses_debug
 
@@ -718,9 +718,22 @@ let set_typeclasses_debug =
       optread  = get_typeclasses_debug;
       optwrite = set_typeclasses_debug; }
 
+let set_typeclasses_debug_verbose d = (:=) typeclasses_debug_verbose d
+
+let get_typeclasses_debug_verbose () = !typeclasses_debug_verbose
+
+let set_typeclasses_debug_verbose =
+  declare_bool_option
+    { optsync  = true;
+      optdepr  = false;
+      optname  = "debug output for typeclasses proof search";
+      optkey   = ["Typeclasses";"Debug";"Verbose"];
+      optread  = get_typeclasses_debug_verbose;
+      optwrite = set_typeclasses_debug_verbose; }
+
 
 let set_typeclasses_depth d = (:=) typeclasses_depth d;
-  Typeclasses.solve_instanciations_problem := solve_inst !typeclasses_debug !typeclasses_depth
+  Typeclasses.solve_instanciations_problem := solve_inst !typeclasses_depth
     
 let get_typeclasses_depth () = !typeclasses_depth
 
