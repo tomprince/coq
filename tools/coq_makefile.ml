@@ -234,11 +234,17 @@ let install (vfiles,(mlifiles,ml4files,mlfiles,mllibfiles,mlpackfiles),_,sds) in
     print "\n";
     install_doc (not_empty vfiles) (not_empty mlifiles) inc
 
-let make_makefile sds =
+let make_makefile is_install sds =
+  let install_opt =
+    match is_install with
+      | Project_file.NoInstall -> " -no-install"
+      | Project_file.TraditionalInstall -> ""
+      | Project_file.UserInstall -> " -install user"
+  in
   if !make_name <> "" then begin
     printf "%s: %s\n" !makefile_name !make_name;
     print "\tmv -f $@ $@.bak\n";
-    print "\t$(COQBIN)coq_makefile -f $< -o $@\n\n";
+    printf "\t$(COQBIN)coq_makefile -f $< -o $@ %s\n\n" install_opt;
     List.iter
       (fun x -> print "\t(cd "; print x; print " ; $(MAKE) Makefile)\n")
       sds;
@@ -665,7 +671,7 @@ let do_makefile args =
   standard opt;
   if is_install <> Project_file.NoInstall then install targets inc;
   clean sds sps;
-  make_makefile sds;
+  make_makefile is_install sds;
   warning ();
   if not (makefile = None) then close_out !output_channel;
   exit 0
