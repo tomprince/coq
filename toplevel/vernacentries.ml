@@ -577,10 +577,10 @@ let vernac_include l =
 
 (* Sections *)
 
-let vernac_begin_section (_, id as lid) =
+let vernac_begin_section (loc, id) =
   check_no_pending_proofs ();
-  Dumpglob.dump_definition lid true "sec";
-  Lib.open_section id
+  let id = Lib.open_section id in
+  Dumpglob.dump_definition (loc, id) true "sec"
 
 let vernac_end_section (loc,_) =
   Dumpglob.dump_reference loc

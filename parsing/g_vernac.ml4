@@ -406,8 +406,8 @@ GEXTEND Gram
 	bl = LIST0 module_binder; ":"; mty = module_type_inl ->
 	  VernacDeclareModule (export, id, bl, mty)
       (* Section beginning *)
-      | IDENT "Section"; id = identref -> VernacBeginSection id
-      | IDENT "Chapter"; id = identref -> VernacBeginSection id
+      | IDENT "Section"; id = OPT [ ident ] -> VernacBeginSection (loc, id)
+      | IDENT "Chapter"; id = OPT [ ident ] -> VernacBeginSection (loc, id)
 
       (* This end a Section a Module or a Module Type *)
       | IDENT "End"; id = OPT [ ident ] -> VernacEndSegment (loc, id)

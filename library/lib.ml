@@ -490,6 +490,10 @@ let set_xml_open_section f = xml_open_section := f
 let set_xml_close_section f = xml_close_section := f
 
 let open_section id =
+  let id = match id with
+    | Some id -> id
+    | None -> anonymous_id ()
+  in
   let olddir,(mp,oldsec) = !path_prefix in
   let dir = add_dirpath_suffix olddir id in
   let prefix = dir, (mp, add_dirpath_suffix oldsec id) in
@@ -502,7 +506,8 @@ let open_section id =
   Nametab.push_dir (Nametab.Until 1) dir (DirOpenSection prefix);
   path_prefix := prefix;
   if !Flags.xml_export then !xml_open_section id;
-  add_section ()
+  add_section ();
+  id
 
 
 (* Restore lib_stk and summaries as before the section opening, and

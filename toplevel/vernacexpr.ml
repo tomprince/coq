@@ -247,7 +247,7 @@ type vernac_expr =
   | VernacCombinedScheme of lident * lident list
 
   (* Gallina extensions *)
-  | VernacBeginSection of lident
+  | VernacBeginSection of identifier option located
   | VernacEndSegment of identifier option located
   | VernacRequire of
       export_flag option * lreference list

@@ -664,7 +664,7 @@ let rec pr_vernac = function
 
 
   (* Gallina extensions *)
-  | VernacBeginSection id -> hov 2 (str"Section" ++ spc () ++ pr_lident id)
+  | VernacBeginSection (loc, id) -> hov 2 (str"Section" ++ pr_opt (fun id -> spc () ++ pr_lident (loc, id)) id )
   | VernacEndSegment (loc, id) -> hov 2 (str"End" ++ pr_opt (fun id -> spc() ++ pr_lident (loc,id)) id )
   | VernacRequire (exp,l) -> hov 2
       (str "Require" ++ spc() ++ pr_require_token exp ++

@@ -148,7 +148,7 @@ val remove_section_part : Libnames.global_reference -> Names.dir_path
 
 (** {6 Sections } *)
 
-val open_section : Names.identifier -> unit
+val open_section : Names.identifier option -> Names.identifier
 val close_section : unit -> unit
 
 (** {6 Backtracking (undo). } *)
