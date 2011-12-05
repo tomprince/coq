@@ -410,7 +410,7 @@ GEXTEND Gram
       | IDENT "Chapter"; id = identref -> VernacBeginSection id
 
       (* This end a Section a Module or a Module Type *)
-      | IDENT "End"; id = identref -> VernacEndSegment id
+      | IDENT "End"; id = OPT [ ident ] -> VernacEndSegment (loc, id)
 
       (* Requiring an already compiled module *)
       | IDENT "Require"; export = export_token; qidl = LIST1 global ->

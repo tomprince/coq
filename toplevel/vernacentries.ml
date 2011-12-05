@@ -589,9 +589,11 @@ let vernac_end_section (loc,_) =
 
 (* Dispatcher of the "End" command *)
 
-let vernac_end_segment (_,id as lid) =
+let vernac_end_segment (loc, id) =
   check_no_pending_proofs ();
-  match Lib.find_opening_node id with
+  let (id, node) = Lib.find_opening_node id in
+  let lid = (loc, id) in
+  match node with
   | Lib.OpenedModule (false,export,_,_) -> vernac_end_module export lid
   | Lib.OpenedModule (true,_,_,_) -> vernac_end_modtype lid
   | Lib.OpenedSection _ -> vernac_end_section lid

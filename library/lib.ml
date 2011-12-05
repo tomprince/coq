@@ -381,9 +381,10 @@ let find_opening_node id =
   try
     let oname,entry = find_entry_p is_opening_node in
     let id' = basename (fst oname) in
-    if id <> id' then
+    match id with
+    | Some id when id <> id' ->
       error ("Last block to end has name "^(Names.string_of_id id')^".");
-    entry
+    | _ -> id', entry
   with Not_found -> error "There is nothing to end."
 
 (* Discharge tables *)

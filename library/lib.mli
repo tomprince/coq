@@ -106,7 +106,7 @@ val is_module : unit -> bool
 val current_mod_id : unit -> Names.module_ident
 
 (** Returns the opening node of a given name *)
-val find_opening_node : Names.identifier -> node
+val find_opening_node : Names.identifier option -> Names.identifier * node
 
 (** {6 Modules and module types } *)
 

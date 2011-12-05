@@ -248,7 +248,7 @@ type vernac_expr =
 
   (* Gallina extensions *)
   | VernacBeginSection of lident
-  | VernacEndSegment of lident
+  | VernacEndSegment of identifier option located
   | VernacRequire of
       export_flag option * lreference list
   | VernacImport of export_flag * lreference list
